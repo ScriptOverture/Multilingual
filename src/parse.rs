@@ -52,8 +52,9 @@ impl LanguageParse {
 
     fn get_module(&self) -> anyhow::Result<Module> {
         let path = self.path.clone();
+        println!("path {}", path);
         let content = read_to_string(&path)?;
-
+        println!("content {}", content);
         let ts_syntax = TsSyntax {
             tsx: true,
             ..Default::default()

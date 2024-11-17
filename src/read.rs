@@ -15,8 +15,8 @@ pub fn find_source_files(
     let suffixes = [".txt", ".css", ".map"];
 
     let mut files_all = files_all.iter()
-    .map(|files| format!("{:?}", files.display()))
-    .filter(|files| suffixes.iter().any(|suffix| files.ends_with(suffix)))
+    .map(|files| files.display())
+    .filter(|files| suffixes.iter().any(|suffix| !format!("{:?}", files).ends_with(suffix)))
     .map(|files| LanguageParse::new(
         files.to_string(),
         LanguageNode::default()
