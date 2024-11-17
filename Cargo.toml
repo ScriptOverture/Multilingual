@@ -1,0 +1,17 @@
+[package]
+name = "Multilingual"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.93"
+swc = "6.0.0"
+swc_common = "4.0.1"
+tokio = { version = "1.40.0", features = ["full"] }
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.131"
+clap = { version = "4.5.18", features = ["cargo", "derive", "unicode", "wrap_help"] }
+rayon = "1.10.0"
+swc_ecma_parser = "5.0.0"
+swc_ecma_ast = "4.0.1"
+swc_ecma_visit = "4.0.0"
