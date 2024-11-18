@@ -5,7 +5,7 @@ use swc_ecma_ast::*;
 use swc_ecma_visit::{Visit, VisitWith};
 
 pub struct LanguageNode {
-    pub nodes: Vec<String>,
+    pub nodes: Vec<ObjectLit>,
 }
 
 impl LanguageNode {
@@ -13,6 +13,45 @@ impl LanguageNode {
        Self::default()
     }
 }
+
+
+pub struct LanguageNodeIter<'a> {
+    pub inner: &'a [ObjectLit],
+    pub index: usize
+}
+
+struct LanaguageKeyValue {
+    key: String,
+    value: String
+}
+
+impl<'a> Iterator for LanguageNodeIter<'a> {
+    type Item = &'a ObjectLit;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index < self.inner.len() {
+            let result = &self.inner[self.index];
+            self.index += 1;
+            Some(result)
+        } else {
+            None
+        }
+    }
+}
+
+
+impl<'a> IntoIterator for &'a LanguageNode {
+
+    type Item = &'a ObjectLit;
+    type IntoIter = LanguageNodeIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        LanguageNodeIter {
+            inner: &self.nodes,
+            index: 0,
+        }
+    }
+}
+
 
 impl Default for LanguageNode {
     fn default() -> Self {
@@ -27,21 +66,19 @@ impl Visit for LanguageNode {
     fn visit_call_expr(&mut self, call_expr: &CallExpr) {
         if let Some((object_ident, property_ident)) = match_visit_call_expr(call_expr) {
             if object_ident == "$i18n" && property_ident == "get" {
-                // println!("Matched $i18n.get call at span: {:?}", call_expr);
 
                 for arg in &call_expr.args {
                     if let Expr::Object(obj_lit) = &*arg.expr {
-                        // println!("Found ObjectExpression: {:?}", obj_lit);
-                        println!("......");
-                        self.nodes.push(String::from("xxx"));
-                        for prop in &obj_lit.props {
-                            if let PropOrSpread::Prop(prop) = prop {
-                                if let Prop::KeyValue(prop) = &**prop {
-                                    println!("Found key: {:?}", prop);  
-                                    // self.nodes.push(prop.clone());
-                                }
-                            }
-                        }
+
+                        self.nodes.push(obj_lit.clone());
+                        // for prop in &obj_lit.props {
+                        //     if let PropOrSpread::Prop(prop) = prop {
+                        //         if let Prop::KeyValue(prop) = &**prop {
+                        //             println!("Found key: {:?}", prop);  
+                        //             // self.nodes.push(prop.clone());
+                        //         }
+                        //     }
+                        // }
                     }
                 }
             }
@@ -91,6 +128,10 @@ impl LanguageParse {
     pub fn run(&mut self) -> anyhow::Result<Module> {
         let module = self.get_module()?;
         module.visit_with(&mut self.language);
+
+        for node in &self.language {
+            println!("{:?}", node);
+        }
         Ok(module)
     }
 
