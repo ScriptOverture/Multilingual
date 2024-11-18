@@ -20,16 +20,49 @@ pub struct LanguageNodeIter<'a> {
     pub index: usize
 }
 
-struct LanaguageKeyValue {
-    key: String,
-    value: String
+pub struct LanaguageKeyValue {
+    pub key: String,
+    pub value: String
+}
+
+impl Default for LanaguageKeyValue {
+    fn default() -> Self {
+        Self {
+            key: String::new(),
+            value: String::new()
+        }
+    }
 }
 
 impl<'a> Iterator for LanguageNodeIter<'a> {
-    type Item = &'a ObjectLit;
+    type Item = LanaguageKeyValue;
     fn next(&mut self) -> Option<Self::Item> {
         if self.index < self.inner.len() {
-            let result = &self.inner[self.index];
+            let obj_lit = &self.inner[self.index];
+            let mut result = LanaguageKeyValue::default();
+            for prop in &obj_lit.props {
+                if let PropOrSpread::Prop(prop) = prop {
+                    if let Prop::KeyValue(prop) = &**prop {
+                        if let PropName::Ident(key) = &prop.key {
+                            match key.sym.to_string().as_str() {
+                                "key" => {
+                                    if let Expr::Lit(Lit::Str(prop)) = &*prop.value {
+                                        result.key = prop.value.to_string();
+                                    };
+                                },
+                                "dm" => {
+                                    if let Expr::Lit(Lit::Str(prop)) = &*prop.value {
+                                        result.value = prop.value.to_string();
+                                    };
+                                }
+                                _ => {}
+                            }
+
+                            
+                        }
+                    }
+                }
+            }
             self.index += 1;
             Some(result)
         } else {
@@ -41,7 +74,7 @@ impl<'a> Iterator for LanguageNodeIter<'a> {
 
 impl<'a> IntoIterator for &'a LanguageNode {
 
-    type Item = &'a ObjectLit;
+    type Item = LanaguageKeyValue;
     type IntoIter = LanguageNodeIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -69,7 +102,6 @@ impl Visit for LanguageNode {
 
                 for arg in &call_expr.args {
                     if let Expr::Object(obj_lit) = &*arg.expr {
-
                         self.nodes.push(obj_lit.clone());
                         // for prop in &obj_lit.props {
                         //     if let PropOrSpread::Prop(prop) = prop {
@@ -130,7 +162,7 @@ impl LanguageParse {
         module.visit_with(&mut self.language);
 
         for node in &self.language {
-            println!("{:?}", node);
+            println!("key- {:?} value - {}", node.key, node.value);
         }
         Ok(module)
     }
@@ -164,6 +196,7 @@ impl LanguageParse {
 mod tests {
     use super::*;
 
+    // 验证函数式 语言调用匹配数量是否对应
     #[test]
     fn match_target_calls() {
         let mut language_parse = LanguageParse::new(
@@ -173,5 +206,29 @@ mod tests {
 
         language_parse.run().unwrap();
         assert_eq!(language_parse.language.nodes.len(), 2);
+    }
+
+
+    // 验证函数式 语言调用匹配内容是否对应
+    #[test]
+    fn match_target_calls_verify_content() {
+        let mut language_parse = LanguageParse::new(
+            String::from("./example/useLanguage.tsx"),
+            Default::default()
+        );
+
+        language_parse.run().unwrap();
+
+        for node in &language_parse.language {
+            match node.key.as_str() {
+                "l.k.input" => {
+                    assert_eq!(node.value, "输入");
+                },
+                "l.k.age" => {
+                    assert_eq!(node.value, "年龄");
+                },
+                _ => {}
+            }
+        }
     }
 }
