@@ -3,6 +3,7 @@ use swc_common::BytePos;
 use swc_ecma_parser::{Parser, StringInput, Syntax, TsSyntax};
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Visit, VisitWith};
+use crate::utils;
 
 pub struct LanguageNode {
     pub nodes: Vec<ObjectLit>,
@@ -37,43 +38,34 @@ impl Default for LanaguageKeyValue {
 impl<'a> Iterator for LanguageNodeIter<'a> {
     type Item = LanaguageKeyValue;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index < self.inner.len() {
-            let obj_lit = &self.inner[self.index];
-            let mut result = LanaguageKeyValue::default();
-            for prop in &obj_lit.props {
-                if let PropOrSpread::Prop(prop) = prop {
-                    if let Prop::KeyValue(prop) = &**prop {
-                        if let PropName::Ident(key) = &prop.key {
-                            match key.sym.to_string().as_str() {
-                                "key" => {
-                                    if let Expr::Lit(Lit::Str(prop)) = &*prop.value {
-                                        result.key = prop.value.to_string();
-                                    };
-                                },
-                                "dm" => {
-                                    if let Expr::Lit(Lit::Str(prop)) = &*prop.value {
-                                        result.value = prop.value.to_string();
-                                    };
-                                }
-                                _ => {}
-                            }
+        if self.index >= self.inner.len() {
+            return None;
+        }
 
-                            
+        let obj_lit = &self.inner[self.index];
+        let mut result = LanaguageKeyValue::default();
+
+        for prop in &obj_lit.props {
+            if let PropOrSpread::Prop(prop) = prop {
+                if let Prop::KeyValue(key_value) = &**prop {
+                    if let PropName::Ident(key) = &key_value.key {
+                        match key.sym.to_string().as_str() {
+                            "key" => result.key = utils::extract_str_value(&key_value.value),
+                            "dm" => result.value = utils::extract_str_value(&key_value.value),
+                            _ => {}
                         }
                     }
                 }
             }
-            self.index += 1;
-            Some(result)
-        } else {
-            None
         }
+
+        self.index += 1;
+        Some(result)
     }
 }
 
 
 impl<'a> IntoIterator for &'a LanguageNode {
-
     type Item = LanaguageKeyValue;
     type IntoIter = LanguageNodeIter<'a>;
 
@@ -97,20 +89,12 @@ impl Default for LanguageNode {
 
 impl Visit for LanguageNode {
     fn visit_call_expr(&mut self, call_expr: &CallExpr) {
-        if let Some((object_ident, property_ident)) = match_visit_call_expr(call_expr) {
+        if let Some((object_ident, property_ident)) = utils::match_visit_call_expr(call_expr) {
             if object_ident == "$i18n" && property_ident == "get" {
 
                 for arg in &call_expr.args {
                     if let Expr::Object(obj_lit) = &*arg.expr {
                         self.nodes.push(obj_lit.clone());
-                        // for prop in &obj_lit.props {
-                        //     if let PropOrSpread::Prop(prop) = prop {
-                        //         if let Prop::KeyValue(prop) = &**prop {
-                        //             println!("Found key: {:?}", prop);  
-                        //             // self.nodes.push(prop.clone());
-                        //         }
-                        //     }
-                        // }
                     }
                 }
             }
@@ -119,25 +103,6 @@ impl Visit for LanguageNode {
         // 继续递归访问子节点
         call_expr.visit_children_with(self);
     }
-}
-
-
-fn match_visit_call_expr(call_expr: &CallExpr) -> Option<(&str, &str)> {
-    if let Callee::Expr(callee_expr) = &call_expr.callee {
-        if let Expr::Member(member_expr) = &**callee_expr {
-            if let Expr::Ident(object_ident) = &*member_expr.obj {
-                if let MemberProp::Ident(property_ident) = &member_expr.prop {
-
-                    return Some((
-                        object_ident.sym.as_ref(), 
-                        property_ident.sym.as_ref()
-                    ));
-                }
-            }
-        }
-    }
-    
-    None
 }
 
 
@@ -205,6 +170,7 @@ mod tests {
         );
 
         language_parse.run().unwrap();
+        println!(">>>> {:?}", language_parse.language.nodes.len());
         assert_eq!(language_parse.language.nodes.len(), 2);
     }
 

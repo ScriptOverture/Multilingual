@@ -1,6 +1,7 @@
 mod cli;
 mod read;
 mod parse;
+mod utils;
 use std::path::Path;
 
 use crate::cli::Opts;
