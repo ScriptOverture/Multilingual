@@ -1,23 +1,19 @@
-use std::{path::{Path, PathBuf}, sync::Arc};
-use rayon::prelude::*;
+use std::path::{Path, PathBuf};
 use anyhow::Result;
 use std::fs;
-use thread_local::ThreadLocal;
 use crate::parse::{
     LanguageParse,
     LanguageNode
 };
 
 
-
-
 pub fn find_source_files(
     target_dir: &Path
-) -> Result<()> {
+) -> Result<Vec<LanguageParse>> {
     let files_all = read_file(target_dir)?;
     let suffixes = [".txt", ".css", ".map"];
 
-    let mut files_all = files_all.iter()
+    let files_all = files_all.iter()
     .map(|files| files.display())
     .filter(|files| suffixes.iter().any(|suffix| !format!("{:?}", files).ends_with(suffix)))
     .map(|files| LanguageParse::new(
@@ -26,22 +22,7 @@ pub fn find_source_files(
     ))
     .collect::<Vec<_>>();
 
-    let tls = Arc::new(ThreadLocal::new());
-    files_all.par_iter_mut().for_each(|language_parse| {
-        language_parse.run().unwrap();
-        let tls = tls.clone();
-        let thread_local_data = tls.get_or(|| Box::new(std::cell::RefCell::new(0)));
-        *thread_local_data.borrow_mut() += language_parse.language.nodes.len();
-    });
-
-    let tls = Arc::try_unwrap(tls).unwrap();
-    let total = tls.into_iter().fold(0, |x, y| {
-        let value = *y.borrow();
-        x + value
-    });
-
-    println!("total: {}", total);
-    Ok(())
+    Ok(files_all)
 }
 
 
