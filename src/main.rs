@@ -8,6 +8,7 @@ use crate::read::find_source_files;
 use anyhow::Result;
 use clap::Parser;
 use rayon::prelude::*;
+use std::cell::RefCell;
 use std::path::Path;
 use std::sync::Arc;
 use thread_local::ThreadLocal;
@@ -19,18 +20,22 @@ fn main() -> Result<()> {
     let tls = Arc::new(ThreadLocal::new());
     language_parses.par_iter_mut().for_each(|language_parse| {
         let tls = tls.clone();
-        let thread_local_data = tls.get_or(|| Box::new(std::cell::RefCell::new(0)));
+        let thread_local_data = tls.get_or(|| RefCell::new(Vec::new()));
         language_parse.run().unwrap();
-        *thread_local_data.borrow_mut() += language_parse.language.nodes.len();
+        thread_local_data
+            .borrow_mut()
+            .extend(language_parse.language.nodes.clone());
     });
 
     let tls = Arc::try_unwrap(tls).unwrap();
-    let total = tls.into_iter().fold(0, |x, y| {
-        let value = *y.borrow();
-        x + value
+    let total = tls.into_iter().fold(Vec::new(), |mut x, y| {
+        let value = y.borrow();
+        x.extend(value.clone());
+        x
     });
 
-    println!("language total: {}", total);
+    println!("language: {:?}", total);
+    println!("total: {}", total.len());
 
     Ok(())
 }
