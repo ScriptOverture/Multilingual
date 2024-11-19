@@ -1,0 +1,40 @@
+name: Rust
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+
+  test:
+    name: 测试
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - name: 开始运行测试用例
+        run: cargo test
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: 潜在问题优化检查
+        run: cargo clippy -- -D warnings
+      - name: 生成代码覆盖率
+        run: |
+          cargo install cargo-tarpaulin
+          cargo tarpaulin --verbose --workspace
+    
+
+  fmt:
+      name: 格式化
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: 强行格式化
+        run: cargo fmt --check
