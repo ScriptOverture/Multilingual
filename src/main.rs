@@ -1,22 +1,20 @@
 mod cli;
-mod read;
 mod parse;
+mod read;
 mod utils;
 
-use std::path::Path;
-use std::sync::Arc;
-use rayon::prelude::*;
-use thread_local::ThreadLocal;
 use crate::cli::Opts;
 use crate::read::find_source_files;
-use clap::Parser;
 use anyhow::Result;
+use clap::Parser;
+use rayon::prelude::*;
+use std::path::Path;
+use std::sync::Arc;
+use thread_local::ThreadLocal;
 
 fn main() -> Result<()> {
     let opts = Opts::parse();
-    let mut language_parses = find_source_files(
-        Path::new(&opts.entry_path)
-    )?;
+    let mut language_parses = find_source_files(Path::new(&opts.entry_path))?;
 
     let tls = Arc::new(ThreadLocal::new());
     language_parses.par_iter_mut().for_each(|language_parse| {

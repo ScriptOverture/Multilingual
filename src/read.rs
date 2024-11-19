@@ -1,30 +1,25 @@
-use std::path::{Path, PathBuf};
+use crate::parse::{LanguageNode, LanguageParse};
 use anyhow::Result;
 use std::fs;
-use crate::parse::{
-    LanguageParse,
-    LanguageNode
-};
+use std::path::{Path, PathBuf};
 
-
-pub fn find_source_files(
-    target_dir: &Path
-) -> Result<Vec<LanguageParse>> {
+pub fn find_source_files(target_dir: &Path) -> Result<Vec<LanguageParse>> {
     let files_all = read_file(target_dir)?;
     let suffixes = [".txt", ".css", ".map"];
 
-    let files_all = files_all.iter()
-    .map(|files| files.display())
-    .filter(|files| suffixes.iter().any(|suffix| !format!("{:?}", files).ends_with(suffix)))
-    .map(|files| LanguageParse::new(
-        files.to_string(),
-        LanguageNode::default()
-    ))
-    .collect::<Vec<_>>();
+    let files_all = files_all
+        .iter()
+        .map(|files| files.display())
+        .filter(|files| {
+            suffixes
+                .iter()
+                .any(|suffix| !format!("{:?}", files).ends_with(suffix))
+        })
+        .map(|files| LanguageParse::new(files.to_string(), LanguageNode::default()))
+        .collect::<Vec<_>>();
 
     Ok(files_all)
 }
-
 
 pub fn read_file(file_dir: &Path) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();

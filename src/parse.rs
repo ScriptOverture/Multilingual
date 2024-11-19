@@ -1,38 +1,31 @@
+use crate::utils;
 use std::fs::read_to_string;
 use swc_common::BytePos;
-use swc_ecma_parser::{Parser, StringInput, Syntax, TsSyntax};
 use swc_ecma_ast::*;
+use swc_ecma_parser::{Parser, StringInput, Syntax, TsSyntax};
 use swc_ecma_visit::{Visit, VisitWith};
-use crate::utils;
 
+#[derive(Default)]
 pub struct LanguageNode {
     pub nodes: Vec<ObjectLit>,
 }
 
+#[allow(dead_code)]
 impl LanguageNode {
     fn new() -> Self {
-       Self::default()
+        Self::default()
     }
 }
-
 
 pub struct LanguageNodeIter<'a> {
     pub inner: &'a [ObjectLit],
-    pub index: usize
+    pub index: usize,
 }
 
+#[derive(Default)]
 pub struct LanaguageKeyValue {
     pub key: String,
-    pub value: String
-}
-
-impl Default for LanaguageKeyValue {
-    fn default() -> Self {
-        Self {
-            key: String::new(),
-            value: String::new()
-        }
-    }
+    pub value: String,
 }
 
 impl<'a> Iterator for LanguageNodeIter<'a> {
@@ -64,7 +57,6 @@ impl<'a> Iterator for LanguageNodeIter<'a> {
     }
 }
 
-
 impl<'a> IntoIterator for &'a LanguageNode {
     type Item = LanaguageKeyValue;
     type IntoIter = LanguageNodeIter<'a>;
@@ -77,21 +69,10 @@ impl<'a> IntoIterator for &'a LanguageNode {
     }
 }
 
-
-impl Default for LanguageNode {
-    fn default() -> Self {
-        LanguageNode {
-            nodes: Vec::new(),
-        }
-    }
-}
-
-
 impl Visit for LanguageNode {
     fn visit_call_expr(&mut self, call_expr: &CallExpr) {
         if let Some((object_ident, property_ident)) = utils::match_visit_call_expr(call_expr) {
             if object_ident == "$i18n" && property_ident == "get" {
-
                 for arg in &call_expr.args {
                     if let Expr::Object(obj_lit) = &*arg.expr {
                         self.nodes.push(obj_lit.clone());
@@ -105,21 +86,14 @@ impl Visit for LanguageNode {
     }
 }
 
-
 pub struct LanguageParse {
     path: String,
-    pub language: LanguageNode
+    pub language: LanguageNode,
 }
 
 impl LanguageParse {
-    pub fn new(
-        path: String,
-        language: LanguageNode
-    ) -> Self {
-        Self {
-            path,
-            language
-        }
+    pub fn new(path: String, language: LanguageNode) -> Self {
+        Self { path, language }
     }
 
     pub fn run(&mut self) -> anyhow::Result<Module> {
@@ -135,27 +109,23 @@ impl LanguageParse {
     fn get_module(&self) -> anyhow::Result<Module> {
         let path = self.path.clone();
         let content = read_to_string(&path)?;
-        
+
         let ts_syntax = TsSyntax {
             tsx: true,
             ..Default::default()
         };
 
         let mut parser = Parser::new(
-            Syntax::Typescript(ts_syntax), 
-            StringInput::new(
-                    &content, 
-                    BytePos(0),
-                    BytePos(content.len() as u32)
-                ),
-             None
+            Syntax::Typescript(ts_syntax),
+            StringInput::new(&content, BytePos(0), BytePos(content.len() as u32)),
+            None,
         );
 
-        parser.parse_module().map_err(|err| anyhow::anyhow!("{:?}", err))
+        parser
+            .parse_module()
+            .map_err(|err| anyhow::anyhow!("{:?}", err))
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
@@ -166,20 +136,19 @@ mod tests {
     fn match_target_calls() {
         let mut language_parse = LanguageParse::new(
             String::from("./example/useLanguage.tsx"),
-            Default::default()
+            Default::default(),
         );
 
         language_parse.run().unwrap();
         assert_eq!(language_parse.language.nodes.len(), 2);
     }
 
-
     // 验证函数式 语言调用匹配内容是否对应
     #[test]
     fn match_target_calls_verify_content() {
         let mut language_parse = LanguageParse::new(
             String::from("./example/useLanguage.tsx"),
-            Default::default()
+            Default::default(),
         );
 
         language_parse.run().unwrap();
@@ -188,10 +157,10 @@ mod tests {
             match node.key.as_str() {
                 "l.k.input" => {
                     assert_eq!(node.value, "输入");
-                },
+                }
                 "l.k.age" => {
                     assert_eq!(node.value, "年龄");
-                },
+                }
                 _ => {}
             }
         }
