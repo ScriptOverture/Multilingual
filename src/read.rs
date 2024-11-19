@@ -1,11 +1,14 @@
-use std::path::{Path, PathBuf};
+use std::{path::{Path, PathBuf}, sync::Arc};
 use rayon::prelude::*;
 use anyhow::Result;
 use std::fs;
+use thread_local::ThreadLocal;
 use crate::parse::{
     LanguageParse,
     LanguageNode
 };
+
+
 
 
 pub fn find_source_files(
@@ -23,10 +26,21 @@ pub fn find_source_files(
     ))
     .collect::<Vec<_>>();
 
+    let tls = Arc::new(ThreadLocal::new());
     files_all.par_iter_mut().for_each(|language_parse| {
         language_parse.run().unwrap();
+        let tls = tls.clone();
+        let thread_local_data = tls.get_or(|| Box::new(std::cell::RefCell::new(0)));
+        *thread_local_data.borrow_mut() += language_parse.language.nodes.len();
     });
 
+    let tls = Arc::try_unwrap(tls).unwrap();
+    let total = tls.into_iter().fold(0, |x, y| {
+        let value = *y.borrow();
+        x + value
+    });
+
+    println!("total: {}", total);
     Ok(())
 }
 

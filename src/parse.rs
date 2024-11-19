@@ -108,7 +108,7 @@ impl Visit for LanguageNode {
 
 pub struct LanguageParse {
     path: String,
-    language: LanguageNode
+    pub language: LanguageNode
 }
 
 impl LanguageParse {
@@ -126,9 +126,9 @@ impl LanguageParse {
         let module = self.get_module()?;
         module.visit_with(&mut self.language);
 
-        for node in &self.language {
-            println!("key- {:?} value - {}", node.key, node.value);
-        }
+        // for node in &self.language {
+        //     println!("key- {:?} value - {}", node.key, node.value);
+        // }
         Ok(module)
     }
 
@@ -170,7 +170,6 @@ mod tests {
         );
 
         language_parse.run().unwrap();
-        println!(">>>> {:?}", language_parse.language.nodes.len());
         assert_eq!(language_parse.language.nodes.len(), 2);
     }
 
