@@ -21,10 +21,11 @@ fn main() -> Result<()> {
     language_parses.par_iter_mut().for_each(|language_parse| {
         let tls = tls.clone();
         let thread_local_data = tls.get_or(|| RefCell::new(Vec::new()));
-        language_parse.run().unwrap();
-        thread_local_data
-            .borrow_mut()
-            .extend(language_parse.language.nodes.clone());
+        if language_parse.run().is_ok() {
+            thread_local_data
+                .borrow_mut()
+                .extend(language_parse.language.nodes.clone());
+        }
     });
 
     let tls = Arc::try_unwrap(tls).unwrap();

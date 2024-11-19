@@ -99,10 +99,6 @@ impl LanguageParse {
     pub fn run(&mut self) -> anyhow::Result<Module> {
         let module = self.get_module()?;
         module.visit_with(&mut self.language);
-
-        // for node in &self.language {
-        //     println!("key- {:?} value - {}", node.key, node.value);
-        // }
         Ok(module)
     }
 
@@ -123,7 +119,7 @@ impl LanguageParse {
 
         parser
             .parse_module()
-            .map_err(|err| anyhow::anyhow!("{:?}", err))
+            .map_err(|err| anyhow::anyhow!("path - {:?} error - {:?}", path, err))
     }
 }
 
