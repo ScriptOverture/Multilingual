@@ -18,7 +18,7 @@ pub fn find_source_files(target_dir: &Path) -> Result<Vec<LanguageParse>> {
         })
         .map(|files| {
             let path = files.to_string();
-            let language= if path.contains("language.ts") {
+            let language = if path.contains("language.ts") {
                 LanguageNodeIdent::ObjectExpression(Default::default())
             } else {
                 LanguageNodeIdent::CallExpression(Default::default())

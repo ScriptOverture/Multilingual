@@ -31,36 +31,28 @@ pub struct ObjectExpressionLanguageNode {
 
 impl Visit for ObjectExpressionLanguageNode {
     fn visit_object_lit(&mut self, obj_lit: &ObjectLit) {
-        for prop in &obj_lit.props {
-            if let PropOrSpread::Prop(boxed_prop) = prop {
-                println!("Prop: {:#?}", boxed_prop);
-                if let Prop::KeyValue(key_value_prop) = &**boxed_prop {
-                    // Match the key
-                    if let PropName::Ident(ident) = &key_value_prop.key {
-                        let key = ident.sym.to_string();
-                        println!("Key: {}", key);
+        if let Some(node) = dfs(obj_lit, "key") {
+            self.nodes.push(node.clone());
+        };
+    }
+}
 
-                        // Match the value
-                        if let Expr::Object(obj_lit) = &*key_value_prop.value {
-                            obj_lit.props.iter().for_each(|item| {
-                                if let PropOrSpread::Prop(boxed_prop) = item {
-                                    if let Prop::KeyValue(key_value) = &**boxed_prop {
-                                        if let PropName::Ident(ident) = &key_value.key {
-                                            if ident.sym == "key" {
-                                                self.nodes.push(obj_lit.clone());
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-                            // let value = string_lit.value.to_string();
-                            // println!("Value: {}", value);
-                        }
+fn dfs<'ast>(obj_lit: &'ast ObjectLit, key_ident: &str) -> Option<&'ast ObjectLit> {
+    for prop in &obj_lit.props {
+        if let PropOrSpread::Prop(boxed_prop) = prop {
+            if let Prop::KeyValue(key_value_prop) = &**boxed_prop {
+                if let PropName::Ident(ident) = &key_value_prop.key {
+                    if ident.sym == key_ident {
+                        return Some(obj_lit);
                     }
+                }
+                if let Expr::Object(obj_lit) = &*key_value_prop.value {
+                    return dfs(obj_lit, key_ident);
                 }
             }
         }
     }
+    None
 }
 
 #[derive(Default, Debug, Clone)]
