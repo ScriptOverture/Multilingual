@@ -121,18 +121,14 @@ impl<'a> IntoIterator for &'a LanguageNodeIdent {
 
     fn into_iter(self) -> Self::IntoIter {
         match self {
-            LanguageNodeIdent::CallExpression(node) => {
-                LanguageNodeIter {
-                    inner: &node.nodes,
-                    index: 0,
-                }
-            }
-            LanguageNodeIdent::ObjectExpression(node) => {
-                LanguageNodeIter {
-                    inner: &node.nodes,
-                    index: 0,
-                }
-            }
+            LanguageNodeIdent::CallExpression(node) => LanguageNodeIter {
+                inner: &node.nodes,
+                index: 0,
+            },
+            LanguageNodeIdent::ObjectExpression(node) => LanguageNodeIter {
+                inner: &node.nodes,
+                index: 0,
+            },
         }
     }
 }
