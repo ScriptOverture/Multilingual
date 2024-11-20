@@ -1,9 +1,11 @@
 mod cli;
+mod language;
 mod parse;
 mod read;
 mod utils;
 
 use crate::cli::Opts;
+use crate::language::LanaguageKeyValue;
 use crate::read::find_source_files;
 use anyhow::Result;
 use clap::Parser;
@@ -22,9 +24,12 @@ fn main() -> Result<()> {
         let tls = tls.clone();
         let thread_local_data = tls.get_or(|| RefCell::new(Vec::new()));
         if language_parse.run().is_ok() {
-            thread_local_data
-                .borrow_mut()
-                .extend(language_parse.language.nodes.clone());
+            thread_local_data.borrow_mut().extend(
+                language_parse
+                    .language
+                    .into_iter()
+                    .collect::<Vec<LanaguageKeyValue>>(),
+            );
         }
     });
 

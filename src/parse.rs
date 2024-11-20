@@ -1,3 +1,4 @@
+use crate::language::LanguageNodeIdent;
 use crate::utils;
 use std::fs::read_to_string;
 use swc_common::BytePos;
@@ -88,17 +89,25 @@ impl Visit for LanguageNode {
 
 pub struct LanguageParse {
     path: String,
-    pub language: LanguageNode,
+    pub language: LanguageNodeIdent,
 }
 
 impl LanguageParse {
-    pub fn new(path: String, language: LanguageNode) -> Self {
+    pub fn new(path: String, language: LanguageNodeIdent) -> Self {
         Self { path, language }
     }
 
     pub fn run(&mut self) -> anyhow::Result<Module> {
         let module = self.get_module()?;
-        module.visit_with(&mut self.language);
+        match &mut self.language {
+            LanguageNodeIdent::CallExpression(ref mut node) => {
+                module.visit_with(node);
+            }
+            LanguageNodeIdent::ObjectExpression(ref mut node) => {
+                module.visit_with(node);
+            }
+        }
+
         Ok(module)
     }
 
@@ -125,6 +134,8 @@ impl LanguageParse {
 
 #[cfg(test)]
 mod tests {
+    use crate::language;
+
     use super::*;
 
     // 验证函数式 语言调用匹配数量是否对应
@@ -132,11 +143,11 @@ mod tests {
     fn match_target_calls() {
         let mut language_parse = LanguageParse::new(
             String::from("./example/useLanguage.tsx"),
-            Default::default(),
+            LanguageNodeIdent::CallExpression(Default::default()),
         );
 
         language_parse.run().unwrap();
-        assert_eq!(language_parse.language.nodes.len(), 2);
+        assert_eq!(language_parse.language.into_iter().count(), 2);
     }
 
     // 验证函数式 语言调用匹配内容是否对应
@@ -144,7 +155,7 @@ mod tests {
     fn match_target_calls_verify_content() {
         let mut language_parse = LanguageParse::new(
             String::from("./example/useLanguage.tsx"),
-            Default::default(),
+            LanguageNodeIdent::CallExpression(Default::default()),
         );
 
         language_parse.run().unwrap();

@@ -1,4 +1,5 @@
-use crate::parse::{LanguageNode, LanguageParse};
+use crate::language::LanguageNodeIdent;
+use crate::parse::LanguageParse;
 use anyhow::Result;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -15,7 +16,12 @@ pub fn find_source_files(target_dir: &Path) -> Result<Vec<LanguageParse>> {
                 .iter()
                 .any(|suffix| !format!("{:?}", files).ends_with(suffix))
         })
-        .map(|files| LanguageParse::new(files.to_string(), LanguageNode::default()))
+        .map(|files| {
+            LanguageParse::new(
+                files.to_string(),
+                LanguageNodeIdent::CallExpression(Default::default()),
+            )
+        })
         .collect::<Vec<_>>();
 
     Ok(files_all)
