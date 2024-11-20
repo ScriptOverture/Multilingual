@@ -30,19 +30,36 @@ pub struct ObjectExpressionLanguageNode {
 }
 
 impl Visit for ObjectExpressionLanguageNode {
-    fn visit_call_expr(&mut self, call_expr: &CallExpr) {
-        if let Some((object_ident, property_ident)) = utils::match_visit_call_expr(call_expr) {
-            if object_ident == "$i18n" && property_ident == "get" {
-                for arg in &call_expr.args {
-                    if let Expr::Object(obj_lit) = &*arg.expr {
-                        self.nodes.push(obj_lit.clone());
+    fn visit_object_lit(&mut self, obj_lit: &ObjectLit) {
+        for prop in &obj_lit.props {
+            if let PropOrSpread::Prop(boxed_prop) = prop {
+                println!("Prop: {:#?}", boxed_prop);
+                if let Prop::KeyValue(key_value_prop) = &**boxed_prop {
+                    // Match the key
+                    if let PropName::Ident(ident) = &key_value_prop.key {
+                        let key = ident.sym.to_string();
+                        println!("Key: {}", key);
+
+                        // Match the value
+                        if let Expr::Object(obj_lit) = &*key_value_prop.value {
+                            obj_lit.props.iter().for_each(|item| {
+                                if let PropOrSpread::Prop(boxed_prop) = item {
+                                    if let Prop::KeyValue(key_value) = &**boxed_prop {
+                                        if let PropName::Ident(ident) = &key_value.key {
+                                            if ident.sym == "key" {
+                                                self.nodes.push(obj_lit.clone());
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                            // let value = string_lit.value.to_string();
+                            // println!("Value: {}", value);
+                        }
                     }
                 }
             }
         }
-
-        // 继续递归访问子节点
-        call_expr.visit_children_with(self);
     }
 }
 

@@ -17,10 +17,13 @@ pub fn find_source_files(target_dir: &Path) -> Result<Vec<LanguageParse>> {
                 .any(|suffix| !format!("{:?}", files).ends_with(suffix))
         })
         .map(|files| {
-            LanguageParse::new(
-                files.to_string(),
-                LanguageNodeIdent::CallExpression(Default::default()),
-            )
+            let path = files.to_string();
+            let language= if path.contains("language.ts") {
+                LanguageNodeIdent::ObjectExpression(Default::default())
+            } else {
+                LanguageNodeIdent::CallExpression(Default::default())
+            };
+            LanguageParse::new(path, language)
         })
         .collect::<Vec<_>>();
 

@@ -6,5 +6,9 @@ export default {
     xxx: {
         key: "lll.k.xxx",
         dm: "xxx"
+    },
+    jjj: {
+        key: "asdasd",
+        dm: "jjj"
     }
 }
