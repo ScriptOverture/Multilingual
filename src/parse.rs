@@ -88,4 +88,27 @@ mod tests {
             }
         }
     }
+
+    // 检验language.ts语言配置是否正确
+    #[test]
+    fn match_target_object() {
+        let mut language_parse = LanguageParse::new(
+            String::from("./example/language.ts"),
+            LanguageNodeIdent::ObjectExpression(Default::default()),
+        );
+
+        language_parse.run().unwrap();
+
+        assert_eq!(
+            language_parse
+                .language
+                .into_iter()
+                .map(|item| {
+                    println!("{:?}", item);
+                    item
+                })
+                .count(),
+            4
+        );
+    }
 }

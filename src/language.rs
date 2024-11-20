@@ -31,28 +31,34 @@ pub struct ObjectExpressionLanguageNode {
 
 impl Visit for ObjectExpressionLanguageNode {
     fn visit_object_lit(&mut self, obj_lit: &ObjectLit) {
-        if let Some(node) = dfs(obj_lit, "key") {
-            self.nodes.push(node.clone());
-        };
+        let language_nodes = dfs(obj_lit, "key")
+            .into_iter()
+            .cloned()
+            .collect::<Vec<ObjectLit>>();
+        // if let Some(node) =  {
+        self.nodes.extend(language_nodes);
+        // };
     }
 }
 
-fn dfs<'ast>(obj_lit: &'ast ObjectLit, key_ident: &str) -> Option<&'ast ObjectLit> {
+fn dfs<'ast>(obj_lit: &'ast ObjectLit, key_ident: &str) -> Vec<&'ast ObjectLit> {
+    let mut result = Vec::new();
     for prop in &obj_lit.props {
         if let PropOrSpread::Prop(boxed_prop) = prop {
             if let Prop::KeyValue(key_value_prop) = &**boxed_prop {
                 if let PropName::Ident(ident) = &key_value_prop.key {
                     if ident.sym == key_ident {
-                        return Some(obj_lit);
+                        result.push(obj_lit);
+                        break;
                     }
                 }
                 if let Expr::Object(obj_lit) = &*key_value_prop.value {
-                    return dfs(obj_lit, key_ident);
+                    result.extend(dfs(obj_lit, key_ident));
                 }
             }
         }
     }
-    None
+    result
 }
 
 #[derive(Default, Debug, Clone)]
