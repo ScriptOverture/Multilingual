@@ -24,7 +24,6 @@ pub fn match_visit_call_expr(call_expr: &CallExpr) -> Option<(&str, &str)> {
     None
 }
 
-
 // 简单的 “$i18n.get 函数提取” 的包装
 pub fn handle_i18n_get_call_expr(call_expr: &CallExpr, nodes: &mut Vec<ObjectLit>) {
     if let Some((object_ident, property_ident)) = match_visit_call_expr(call_expr) {
@@ -38,9 +37,11 @@ pub fn handle_i18n_get_call_expr(call_expr: &CallExpr, nodes: &mut Vec<ObjectLit
     }
 }
 
-
 /// languzge.ts 配置文件 深度遍历查找
-pub fn dfs_object_expression_node<'ast>(obj_lit: &'ast ObjectLit, key_ident: &str) -> Vec<&'ast ObjectLit> {
+pub fn dfs_object_expression_node<'ast>(
+    obj_lit: &'ast ObjectLit,
+    key_ident: &str,
+) -> Vec<&'ast ObjectLit> {
     let mut result = Vec::new();
     for prop in &obj_lit.props {
         if let PropOrSpread::Prop(boxed_prop) = prop {

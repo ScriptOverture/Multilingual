@@ -23,13 +23,12 @@ pub struct ObjectExpressionLanguageNode {
 
 impl Visit for ObjectExpressionLanguageNode {
     fn visit_object_lit(&mut self, obj_lit: &ObjectLit) {
-        
-            let language_nodes = utils::dfs_object_expression_node(obj_lit, "key")
-                .into_iter()
-                .cloned()
-                .collect::<Vec<ObjectLit>>();
+        let language_nodes = utils::dfs_object_expression_node(obj_lit, "key")
+            .into_iter()
+            .cloned()
+            .collect::<Vec<ObjectLit>>();
 
-            self.nodes.extend(language_nodes);
+        self.nodes.extend(language_nodes);
 
         // 继续递归访问子节点
         obj_lit.visit_children_with(self);
@@ -39,8 +38,6 @@ impl Visit for ObjectExpressionLanguageNode {
         utils::handle_i18n_get_call_expr(call_expr, &mut self.nodes);
     }
 }
-
-
 
 #[derive(Default, Debug, Clone)]
 pub struct LanaguageKeyValue {
