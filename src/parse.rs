@@ -108,7 +108,7 @@ mod tests {
                     item
                 })
                 .count(),
-            4
+            6
         );
     }
 }

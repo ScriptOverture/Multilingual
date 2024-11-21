@@ -9,15 +9,7 @@ pub struct CallExpressionLanguageNode {
 
 impl Visit for CallExpressionLanguageNode {
     fn visit_call_expr(&mut self, call_expr: &CallExpr) {
-        if let Some((object_ident, property_ident)) = utils::match_visit_call_expr(call_expr) {
-            if object_ident == "$i18n" && property_ident == "get" {
-                for arg in &call_expr.args {
-                    if let Expr::Object(obj_lit) = &*arg.expr {
-                        self.nodes.push(obj_lit.clone());
-                    }
-                }
-            }
-        }
+        utils::handle_i18n_get_call_expr(call_expr, &mut self.nodes);
 
         // 继续递归访问子节点
         call_expr.visit_children_with(self);
@@ -31,35 +23,24 @@ pub struct ObjectExpressionLanguageNode {
 
 impl Visit for ObjectExpressionLanguageNode {
     fn visit_object_lit(&mut self, obj_lit: &ObjectLit) {
-        let language_nodes = dfs(obj_lit, "key")
-            .into_iter()
-            .cloned()
-            .collect::<Vec<ObjectLit>>();
-        // if let Some(node) =  {
-        self.nodes.extend(language_nodes);
-        // };
+        
+            let language_nodes = utils::dfs_object_expression_node(obj_lit, "key")
+                .into_iter()
+                .cloned()
+                .collect::<Vec<ObjectLit>>();
+
+            self.nodes.extend(language_nodes);
+
+        // 继续递归访问子节点
+        obj_lit.visit_children_with(self);
+    }
+
+    fn visit_call_expr(&mut self, call_expr: &CallExpr) {
+        utils::handle_i18n_get_call_expr(call_expr, &mut self.nodes);
     }
 }
 
-fn dfs<'ast>(obj_lit: &'ast ObjectLit, key_ident: &str) -> Vec<&'ast ObjectLit> {
-    let mut result = Vec::new();
-    for prop in &obj_lit.props {
-        if let PropOrSpread::Prop(boxed_prop) = prop {
-            if let Prop::KeyValue(key_value_prop) = &**boxed_prop {
-                if let PropName::Ident(ident) = &key_value_prop.key {
-                    if ident.sym == key_ident {
-                        result.push(obj_lit);
-                        break;
-                    }
-                }
-                if let Expr::Object(obj_lit) = &*key_value_prop.value {
-                    result.extend(dfs(obj_lit, key_ident));
-                }
-            }
-        }
-    }
-    result
-}
+
 
 #[derive(Default, Debug, Clone)]
 pub struct LanaguageKeyValue {
