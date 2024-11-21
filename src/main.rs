@@ -11,13 +11,14 @@ use anyhow::Result;
 use clap::Parser;
 use rayon::prelude::*;
 use std::cell::RefCell;
-use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
 use thread_local::ThreadLocal;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let opts = Opts::parse();
-    let mut language_parses = find_source_files(Path::new(&opts.entry_path))?;
+    let mut language_parses = find_source_files(PathBuf::from(opts.entry_path)).await?;
 
     let tls = Arc::new(ThreadLocal::new());
     language_parses.par_iter_mut().for_each(|language_parse| {

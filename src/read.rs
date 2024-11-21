@@ -1,48 +1,53 @@
 use crate::language::LanguageNodeIdent;
 use crate::parse::LanguageParse;
 use anyhow::Result;
-use std::fs;
-use std::path::{Path, PathBuf};
+use futures::{stream, Stream, StreamExt};
+use std::path::PathBuf;
+use tokio::fs;
 
-pub fn find_source_files(target_dir: &Path) -> Result<Vec<LanguageParse>> {
-    let files_all = read_file(target_dir)?;
-    let suffixes = [".txt", ".css", ".map"];
-
-    let files_all = files_all
-        .iter()
-        .map(|files| files.display())
-        .filter(|files| {
-            suffixes
-                .iter()
-                .any(|suffix| !format!("{:?}", files).ends_with(suffix))
+pub async fn find_source_files(target_dir: PathBuf) -> Result<Vec<LanguageParse>> {
+    let suffixes = [".ts", ".tsx", ".js", "jsx", ".vue"];
+    let files_all = read_file_stream(target_dir)
+        .await
+        .filter_map(|file_item| async {
+            file_item.ok().and_then(|file| {
+                let path = file.display().to_string();
+                if suffixes.iter().any(|suffix| path.ends_with(suffix)) {
+                    let language = if path.contains("language.ts") {
+                        LanguageNodeIdent::ObjectExpression(Default::default())
+                    } else {
+                        LanguageNodeIdent::CallExpression(Default::default())
+                    };
+                    Some(LanguageParse::new(path, language))
+                } else {
+                    None
+                }
+            })
         })
-        .map(|files| {
-            let path = files.to_string();
-            let language = if path.contains("language.ts") {
-                LanguageNodeIdent::ObjectExpression(Default::default())
-            } else {
-                LanguageNodeIdent::CallExpression(Default::default())
-            };
-            LanguageParse::new(path, language)
-        })
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .await;
 
     Ok(files_all)
 }
 
-pub fn read_file(file_dir: &Path) -> Result<Vec<PathBuf>> {
-    let mut files = Vec::new();
-
-    if file_dir.is_dir() {
-        for entry in fs::read_dir(file_dir)? {
-            let entry = entry?;
-            let path = entry.path();
-
-            files.extend(read_file(&path)?);
+pub async fn read_file_stream(
+    target_dir: PathBuf,
+) -> impl Stream<Item = Result<PathBuf, std::io::Error>> {
+    stream::unfold(vec![target_dir], |mut dir| async {
+        if let Some(current_file) = dir.pop() {
+            if current_file.is_dir() {
+                match fs::read_dir(&current_file).await {
+                    Ok(mut read_dir) => {
+                        while let Ok(Some(entry)) = read_dir.next_entry().await {
+                            let path = entry.path();
+                            dir.push(path);
+                        }
+                    }
+                    Err(err) => return Some((Err(err), dir)),
+                }
+            }
+            return Some((Ok(current_file), dir));
         }
-    } else {
-        files.push(file_dir.to_path_buf());
-    }
-
-    Ok(files)
+        None
+    })
 }
