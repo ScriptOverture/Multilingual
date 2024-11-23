@@ -9,6 +9,7 @@ use crate::language::LanaguageKeyValue;
 use crate::read::find_source_files;
 use anyhow::Result;
 use clap::Parser;
+use parse::{init_global_config, ParseConfig, PARSE_CONFIG};
 use rayon::prelude::*;
 use serde_json::{Map, Value};
 use std::cell::RefCell;
@@ -19,10 +20,16 @@ use thread_local::ThreadLocal;
 #[tokio::main]
 async fn main() -> Result<()> {
     let opts = Opts::parse();
+
+    init_global_config(ParseConfig {
+        exclude_dirs: opts.exclude_dirs.unwrap_or(vec![]),
+    });
+
     let mut language_parses = find_source_files(PathBuf::from(opts.entry_path)).await?;
 
     let tls = Arc::new(ThreadLocal::new());
     language_parses.par_iter_mut().for_each(|language_parse| {
+        println!("{:?}", PARSE_CONFIG.get());
         let tls = tls.clone();
         let thread_local_data = tls.get_or(|| RefCell::new(Vec::new()));
         if language_parse.run().is_ok() {

@@ -1,9 +1,36 @@
 use crate::language::LanguageNodeIdent;
+use std::ffi::OsStr;
 use std::fs::read_to_string;
+use std::path::Path;
+use std::string::String;
+use std::sync::OnceLock;
 use swc_common::BytePos;
 use swc_ecma_ast::*;
 use swc_ecma_parser::{Parser, StringInput, Syntax, TsSyntax};
 use swc_ecma_visit::VisitWith;
+
+pub static PARSE_CONFIG: OnceLock<ParseConfig> = OnceLock::new();
+
+#[derive(Debug, Default)]
+pub struct ParseConfig {
+    pub exclude_dirs: Vec<String>,
+}
+
+impl ParseConfig {
+    pub fn should_exclude_dir(&self, target_path: &Path) -> bool {
+        target_path.components().any(|component| {
+            self.exclude_dirs
+                .iter()
+                .any(|dir| <String as AsRef<OsStr>>::as_ref(dir) == component.as_os_str())
+        })
+    }
+}
+
+pub fn init_global_config(parse_config: ParseConfig) {
+    PARSE_CONFIG
+        .set(parse_config)
+        .expect("Global instance already initialized!");
+}
 
 pub struct LanguageParse {
     pub path: String,
@@ -32,7 +59,6 @@ impl LanguageParse {
     fn get_module(&self) -> anyhow::Result<Module> {
         let path = self.path.clone();
         let content = read_to_string(&path)?;
-
         let ts_syntax = TsSyntax {
             tsx: true,
             ..Default::default()
@@ -110,5 +136,21 @@ mod tests {
                 .count(),
             6
         );
+    }
+
+    // 测试全局 exclude-dirs 配置
+    #[tokio::test]
+    async fn match_global_config() {
+        use crate::read::find_source_files;
+        use std::path::PathBuf;
+        init_global_config(ParseConfig {
+            exclude_dirs: vec!["testDirs".to_string()],
+        });
+
+        let language_parses = find_source_files(PathBuf::from("./example/testDirs"))
+            .await
+            .unwrap();
+
+        assert_eq!(language_parses.len(), 0);
     }
 }

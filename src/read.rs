@@ -1,5 +1,5 @@
 use crate::language::LanguageNodeIdent;
-use crate::parse::LanguageParse;
+use crate::parse::{LanguageParse, ParseConfig, PARSE_CONFIG};
 use anyhow::Result;
 use futures::{stream, Stream, StreamExt};
 use std::path::PathBuf;
@@ -11,7 +11,14 @@ pub async fn find_source_files(target_dir: PathBuf) -> Result<Vec<LanguageParse>
         .await
         .filter_map(|file_item| async {
             file_item.ok().and_then(|file| {
+                let default_config = ParseConfig::default();
+                let parse_config = PARSE_CONFIG.get().unwrap_or(&default_config);
+
+                if parse_config.should_exclude_dir(&file) {
+                    return None;
+                }
                 let path = file.display().to_string();
+
                 if suffixes.iter().any(|suffix| path.ends_with(suffix)) {
                     let language = if path.contains("language.ts") {
                         LanguageNodeIdent::ObjectExpression(Default::default())
