@@ -1,14 +1,14 @@
 import baseLanguage from "./baseLanguage"
 import {$i18n} from "./utils";
 const base = {
-    key: "base",
+    id: "base",
     dm: "base dmmmm"
 }
 
 const data = {
     d: {
         a: {
-            key: "d.a",
+            id: "d.a",
             dm: "aadasdasd"
         }
     }
@@ -19,11 +19,11 @@ export default {
     ...baseLanguage,
     input: baseLanguage.input,
     xxx: {
-        key: "lll.k.xxx",
+        id: "lll.k.xxx",
         dm: "xxx"
     },
     jjj: {
-        key: "asdasd",
+        id: "asdasd",
         dm: "jjj"
     }
 }
@@ -35,11 +35,11 @@ function useLanguage2() {
 
     return {
         input: $i18n.get({
-            key: "l.k.input",
+            id: "l.k.input",
             dm: "输入"
         }),
         age: $i18n.get({
-            key: "l.k.age",
+            id: "l.k.age",
             dm: "年龄"
         })
     }

@@ -15,11 +15,11 @@ function useLanguage2() {
 
     return {
         input: $i18n.get({
-            key: "l.k.input",
+            id: "l.k.input",
             dm: "输入"
         }),
         age: $i18n.get({
-            key: "l.k.age",
+            id: "l.k.age",
             dm: "年龄"
         })
     }

@@ -6,7 +6,7 @@ use swc_ecma_parser::{Parser, StringInput, Syntax, TsSyntax};
 use swc_ecma_visit::VisitWith;
 
 pub struct LanguageParse {
-    path: String,
+    pub path: String,
     pub language: LanguageNodeIdent,
 }
 

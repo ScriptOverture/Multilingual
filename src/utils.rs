@@ -30,7 +30,11 @@ pub fn handle_i18n_get_call_expr(call_expr: &CallExpr, nodes: &mut Vec<ObjectLit
         if object_ident == "$i18n" && property_ident == "get" {
             for arg in &call_expr.args {
                 if let Expr::Object(obj_lit) = &*arg.expr {
-                    nodes.push(obj_lit.clone());
+                    let language_nodes = dfs_object_expression_node(obj_lit, "id")
+                        .into_iter()
+                        .cloned()
+                        .collect::<Vec<ObjectLit>>();
+                    nodes.extend(language_nodes);
                 }
             }
         }

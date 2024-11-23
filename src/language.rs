@@ -23,7 +23,7 @@ pub struct ObjectExpressionLanguageNode {
 
 impl Visit for ObjectExpressionLanguageNode {
     fn visit_object_lit(&mut self, obj_lit: &ObjectLit) {
-        let language_nodes = utils::dfs_object_expression_node(obj_lit, "key")
+        let language_nodes = utils::dfs_object_expression_node(obj_lit, "id")
             .into_iter()
             .cloned()
             .collect::<Vec<ObjectLit>>();
@@ -65,7 +65,7 @@ impl<'a> Iterator for LanguageNodeIter<'a> {
                 if let Prop::KeyValue(key_value) = &**prop {
                     if let PropName::Ident(key) = &key_value.key {
                         match key.sym.to_string().as_str() {
-                            "key" => result.key = utils::extract_str_value(&key_value.value),
+                            "id" => result.key = utils::extract_str_value(&key_value.value),
                             "dm" => result.value = utils::extract_str_value(&key_value.value),
                             _ => {}
                         }

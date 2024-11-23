@@ -10,7 +10,7 @@ function App() {
             <p>{ lan.input }</p>
             <p>{ $i18n.get(language.input) }</p>
             <p>{ $i18n.get({
-                key: "xxxx",
+                id: "xxxx",
                 dm: "test"
             }) }</p>
         </div>

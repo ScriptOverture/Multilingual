@@ -2,11 +2,11 @@
 
 export default {
     input: {
-        key: "l.k.input",
+        id: "l.k.input",
         dm: "输入"
     },
     age: {
-        key: "l.k.age",
+        id: "l.k.age",
         dm: "年龄"
     }
 }
