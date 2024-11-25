@@ -18,9 +18,8 @@ pub async fn find_source_files(target_dir: PathBuf) -> Result<Vec<LanguageParse>
                     return None;
                 }
                 let path = file.display().to_string();
-
                 if suffixes.iter().any(|suffix| path.ends_with(suffix)) {
-                    let language = if path.contains("language.ts") {
+                    let language = if path.ends_with("language.ts") {
                         LanguageNodeIdent::ObjectExpression(Default::default())
                     } else {
                         LanguageNodeIdent::CallExpression(Default::default())
